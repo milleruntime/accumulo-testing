@@ -27,7 +27,10 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.minicluster.impl.MiniAccumuloConfigImpl;
 import org.apache.accumulo.test.functional.ConfigurableMacBase;
-import org.apache.accumulo.testing.core.randomwalk.concurrent.Replication;
+import org.apache.accumulo.testing.core.randomwalk.replication.BatchWrite;
+import org.apache.accumulo.testing.core.randomwalk.replication.Online;
+import org.apache.accumulo.testing.core.randomwalk.replication.Setup;
+import org.apache.accumulo.testing.core.randomwalk.replication.Verify;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
@@ -43,9 +46,14 @@ public class ReplicationRandomWalkIT extends ConfigurableMacBase {
 
   @Test(timeout = 5 * 60 * 1000)
   public void runReplicationRandomWalkStep() throws Exception {
-    Replication r = new Replication();
+    State state = new State();
+    Properties props = new Properties();
+    Setup s = new Setup();
+    Online o = new Online();
+    BatchWrite b = new BatchWrite();
+    Verify v = new Verify();
 
-    RandWalkEnv env = new RandWalkEnv(new Properties()) {
+    RandWalkEnv env = new RandWalkEnv(props) {
       @Override
       public String getAccumuloUserName() {
         return "root";
@@ -62,7 +70,10 @@ public class ReplicationRandomWalkIT extends ConfigurableMacBase {
       }
 
     };
-    r.visit(null, env, null);
+    s.visit(state, env, props);
+    o.visit(state, env, props);
+    b.visit(state, env, props);
+    v.visit(state, env, props);
   }
 
 }
