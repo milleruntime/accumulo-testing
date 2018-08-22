@@ -71,15 +71,22 @@ case "$1" in
     start_cluster
     CLASSPATH="$CP" java -Dlog4j.configuration="file:$log4j_config" ${perf_pkg}.ListTests | while read test_class; do
       if [[ -z $3 || $test_class == *$3* ]]; then
-        echo "Running test $test_class"
+
         pt_tmp=$(mktemp -d -t accumulo_pt_XXXXXXX)
         setup_accumulo
+        echo "Stopping accumulo to update site config"
+        stop_accumulo
         get_config_file accumulo-site.xml "$pt_tmp"
         CLASSPATH="$CP" java -Dlog4j.configuration="file:$log4j_config"  ${perf_pkg}.MergeSiteConfig "$test_class" "$pt_tmp"
         put_config_file "$pt_tmp/accumulo-site.xml"
         put_server_code "$at_home/core/target/accumulo-testing-core-$at_version.jar"
+        echo "Restarting accumulo"
         start_accumulo
+        echo "Getting config file"
         get_config_file accumulo-client.properties "$pt_tmp"
+        echo "Running test $test_class"
+
+        echo "$CP java -Dlog4j.configuration=file:$log4j_config  ${perf_pkg}.PerfTestRunner $pt_tmp/accumulo-client.properties $test_class $(get_version 'ACCUMULO') $2"
         CLASSPATH="$CP" java -Dlog4j.configuration="file:$log4j_config"  ${perf_pkg}.PerfTestRunner "$pt_tmp/accumulo-client.properties" "$test_class" "$(get_version 'ACCUMULO')" "$2"
       fi
     done
