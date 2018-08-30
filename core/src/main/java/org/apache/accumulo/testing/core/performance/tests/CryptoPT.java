@@ -15,6 +15,7 @@ import org.apache.accumulo.testing.core.performance.Environment;
 import org.apache.accumulo.testing.core.performance.PerformanceTest;
 import org.apache.accumulo.testing.core.performance.Report;
 import org.apache.accumulo.testing.core.performance.SystemConfiguration;
+import org.apache.accumulo.testing.core.performance.util.CryptoUtils;
 import org.apache.accumulo.testing.core.performance.util.TestData;
 
 public class CryptoPT implements PerformanceTest {
@@ -29,61 +30,15 @@ public class CryptoPT implements PerformanceTest {
 
     siteCfg.put(Property.INSTANCE_CRYPTO_SERVICE.getKey(), "org.apache.accumulo.core.security.crypto.impl.AESCryptoService");
     siteCfg.put("instance.crypto.opts.keyManager", "uri");
-    siteCfg.put("instance.crypto.opts.kekId", "file:///home/mpmill4/workspace/accumulo-testing/crypto-key-file");
+    String dir = System.getProperty("user.dir");
+
+    siteCfg.put("instance.crypto.opts.kekId", "file://" + dir + "/crypto-key-file");
 
     return new SystemConfiguration().setAccumuloConfig(siteCfg);
   }
 
   @Override
   public Report runTest(Environment env) throws Exception {
-    String tableName = "crypto";
-    env.getConnector().tableOperations().create(tableName);
-
-    long t1 = System.currentTimeMillis();
-    TestData.generate(env.getConnector(), tableName, NUM_ROWS, NUM_FAMS, NUM_QUALS);
-    long t2 = System.currentTimeMillis();
-    env.getConnector().tableOperations().compact(tableName, null, null, true, true);
-    long t3 = System.currentTimeMillis();
-
-    Report.Builder builder = Report.builder();
-    LongSummaryStatistics stats = runScans(env, tableName);
-    builder.info("scan_stats", stats, "Times in ms to scan all rows");
-    builder.result("scan", stats.getAverage(), "Average time in ms to scan all rows");
-
-    builder.id("crypto").description("Crypto performance");
-    builder.info("write", NUM_ROWS * NUM_FAMS * NUM_QUALS, t2 - t1, "Data write rate entries/sec ");
-    builder.info("compact", NUM_ROWS * NUM_FAMS * NUM_QUALS, t3 - t2, "Compact rate entries/sec ");
-
-    builder.parameter("rows", NUM_ROWS, "Rows in test table");
-    builder.parameter("familes", NUM_FAMS, "Families per row in test table");
-    builder.parameter("qualifiers", NUM_QUALS, "Qualifiers per family in test table");
-
-    return builder.build();
-  }
-
-  private LongSummaryStatistics runScans(Environment env, String tableName) throws TableNotFoundException {
-    LongSummaryStatistics stats = new LongSummaryStatistics();
-    // run a few to get java runtime going
-    for (int i = 0; i < 5; i++) {
-      scan(tableName, env.getConnector());
-    }
-
-    for (int i = 0; i < 50; i++) {
-      System.out.println("calling scan " + i);
-      stats.accept(scan(tableName, env.getConnector()));
-    }
-    return stats;
-  }
-
-  private static long scan(String tableName, Connector c) throws TableNotFoundException {
-
-    long t1 = System.currentTimeMillis();
-    int count = 0;
-    try (Scanner scanner = c.createScanner(tableName, Authorizations.EMPTY)) {
-      for (Map.Entry<Key,Value> entry : scanner) {
-        count++;
-      }
-    }
-    return System.currentTimeMillis() - t1;
+    return CryptoUtils.testStuff(env, NUM_ROWS, NUM_FAMS, NUM_QUALS);
   }
 }
