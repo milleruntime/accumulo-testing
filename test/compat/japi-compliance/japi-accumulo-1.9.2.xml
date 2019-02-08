@@ -30,8 +30,8 @@
 
   -->
 <archives>
-  /path/to/accumulo-core-1.9.2.jar
-  /path/to/accumulo-minicluster-1.9.2.jar
+  /home/miller/.m2/repository/org/apache/accumulo/accumulo-core/1.9.2/accumulo-core-1.9.2.jar
+  /home/miller/.m2/repository/org/apache/accumulo/accumulo-minicluster/1.9.2/accumulo-minicluster-1.9.2.jar
 </archives>
 
 <skip_packages>
