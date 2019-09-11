@@ -54,7 +54,7 @@ run in Docker:
    `HADOOP_USER_NAME` should match the user running Hadoop on your cluster.
 
    ```
-   docker build --build-arg HADOOP_HOME=$HADOOP_HOME --build-arg HADOOP_USER_NAME=`whoami` -t accumulo-testing .
+   docker build --build-arg HADOOP_HOME=$HADOOP_HOME --build-arg HADOOP_USER_NAME=`whoami` --build-arg HADOOP_CONF_DIR=$HADOOP_CONF_DIR -t accumulo-testing .
    ```
 
 2. The `accumulo-testing` image can run a single command:
