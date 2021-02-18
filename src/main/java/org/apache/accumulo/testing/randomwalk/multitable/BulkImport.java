@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.IteratorSetting.Column;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.rfile.RFileWriter;
 import org.apache.accumulo.core.data.Key;
@@ -96,24 +97,28 @@ public class BulkImport extends Test {
       }
       f.close();
     }
-    if (useLegacyBulk) {
-      env.getAccumuloClient().tableOperations().importDirectory(tableName, dir.toString(),
-          fail.toString(), true);
-      FileStatus[] failures = fs.listStatus(fail);
-      if (failures != null && failures.length > 0) {
-        state.set("bulkImportSuccess", "false");
-        throw new Exception(failures.length + " failure files found importing files from " + dir);
+    try {
+      if (useLegacyBulk) {
+        env.getAccumuloClient().tableOperations().importDirectory(tableName, dir.toString(),
+            fail.toString(), true);
+        FileStatus[] failures = fs.listStatus(fail);
+        if (failures != null && failures.length > 0) {
+          state.set("bulkImportSuccess", "false");
+          throw new Exception(failures.length + " failure files found importing files from " + dir);
+        }
+      } else {
+        env.getAccumuloClient().tableOperations().importDirectory(dir.toString()).to(tableName)
+            .tableTime(true).load();
       }
-    } else {
-      env.getAccumuloClient().tableOperations().importDirectory(dir.toString()).to(tableName)
-          .tableTime(true).load();
-    }
 
-    fs.delete(dir, true);
-    fs.delete(fail, true);
-    log.debug("Finished {} bulk import to {} start: {} last: {} marker: {}",
-        useLegacyBulk ? "legacy" : "new", tableName, rows.first(), rows.last(),
-        markerColumnQualifier);
+      fs.delete(dir, true);
+      fs.delete(fail, true);
+      log.debug("Finished {} bulk import to {} start: {} last: {} marker: {}",
+          useLegacyBulk ? "legacy" : "new", tableName, rows.first(), rows.last(),
+          markerColumnQualifier);
+    } catch (TableNotFoundException tnfe) {
+      log.debug("Table {} was deleted", tableName);
+    }
   }
 
 }
