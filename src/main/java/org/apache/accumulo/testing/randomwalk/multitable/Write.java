@@ -25,6 +25,8 @@ import java.util.Random;
 import java.util.UUID;
 
 import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.MutationsRejectedException;
+import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.data.Mutation;
@@ -80,10 +82,20 @@ public class Write extends Test {
     alg.update(payloadBytes);
     m.put(meta, new Text("sha1"), new Value(alg.digest()));
 
-    // add mutation
-    bw.addMutation(m);
-
-    state.set("numWrites", state.getLong("numWrites") + 1);
+    try {
+      // add mutation
+      bw.addMutation(m);
+      state.set("numWrites", state.getLong("numWrites") + 1);
+    } catch (TableOfflineException e) {
+      log.debug("BatchWrite " + tableName + " failed, offline");
+    } catch (MutationsRejectedException mre) {
+      if (mre.getCause() instanceof TableDeletedException)
+        log.debug("BatchWrite " + tableName + " failed, table deleted");
+      else if (mre.getCause() instanceof TableOfflineException)
+        log.debug("BatchWrite " + tableName + " failed, offline");
+      else
+        throw mre;
+    }
   }
 
 }

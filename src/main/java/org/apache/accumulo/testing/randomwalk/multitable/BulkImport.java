@@ -40,7 +40,7 @@ import org.apache.hadoop.io.Text;
 
 public class BulkImport extends Test {
 
-  public static final int LOTS = 100000;
+  public static final int ROWS = 1_000_000;
   public static final int COLS = 10;
   public static final List<Column> COLNAMES = new ArrayList<>();
   public static final Text CHECK_COLUMN_FAMILY = new Text("cf");
@@ -78,8 +78,8 @@ public class BulkImport extends Test {
     final boolean useLegacyBulk = rand.nextBoolean();
 
     TreeSet<String> rows = new TreeSet<>();
-    for (int i = 0; i < LOTS; i++)
-      rows.add(uuid + String.format("__%05d", i));
+    for (int i = 0; i < ROWS; i++)
+      rows.add(uuid + String.format("__%06d", i));
 
     String markerColumnQualifier = String.format("%07d", counter.incrementAndGet());
     log.debug("Preparing {} bulk import to {}", useLegacyBulk ? "legacy" : "new", tableName);
@@ -97,6 +97,7 @@ public class BulkImport extends Test {
       }
       f.close();
     }
+    log.debug("Starting {} bulk import to {}", useLegacyBulk ? "legacy" : "new", tableName);
     try {
       if (useLegacyBulk) {
         env.getAccumuloClient().tableOperations().importDirectory(tableName, dir.toString(),
