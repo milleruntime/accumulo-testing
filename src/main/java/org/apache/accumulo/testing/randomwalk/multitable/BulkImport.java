@@ -119,6 +119,7 @@ public class BulkImport extends Test {
           markerColumnQualifier);
     } catch (TableNotFoundException tnfe) {
       log.debug("Table {} was deleted", tableName);
+      tables.remove(tableName);
     }
   }
 

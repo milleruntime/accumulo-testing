@@ -60,6 +60,7 @@ public class Write extends Test {
       return;
     } catch (TableNotFoundException e) {
       log.debug("Table " + tableName + " not found");
+      tables.remove(tableName);
       return;
     }
 
@@ -89,9 +90,10 @@ public class Write extends Test {
     } catch (TableOfflineException e) {
       log.debug("BatchWrite " + tableName + " failed, offline");
     } catch (MutationsRejectedException mre) {
-      if (mre.getCause() instanceof TableDeletedException)
+      if (mre.getCause() instanceof TableDeletedException) {
         log.debug("BatchWrite " + tableName + " failed, table deleted");
-      else if (mre.getCause() instanceof TableOfflineException)
+        tables.remove(tableName);
+      } else if (mre.getCause() instanceof TableOfflineException)
         log.debug("BatchWrite " + tableName + " failed, offline");
       else
         throw mre;
